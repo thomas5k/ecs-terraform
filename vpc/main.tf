@@ -2,6 +2,9 @@ provider "aws" {
   region = "us-east-2"
 }
 
+################################################################################
+# Set up VPC, Subnets, NAT Gateways
+################################################################################
 module "vpc" {
   source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.64.0"
 
@@ -23,6 +26,5 @@ module "vpc" {
     Environment = "dev"
   }
 
-  vpc_tags = {
-  }
+  vpc_tags = { }
 }
