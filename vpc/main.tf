@@ -8,7 +8,7 @@ provider "aws" {
 module "vpc" {
   source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.64.0"
 
-	name = "pg-sandbox"
+  name = "pg-sandbox"
 
   cidr = "10.0.0.0/16"
 
