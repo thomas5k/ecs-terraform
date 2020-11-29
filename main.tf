@@ -18,18 +18,11 @@ module "vpc" {
   enable_nat_gateway = true
   single_nat_gateway = true
 
-  public_subnet_tags = {
-    Name = "overridden-name-public"
-  }
-
   tags = {
-    Owner       = "user"
+    Owner       = "tom"
     Environment = "dev"
   }
 
   vpc_tags = {
-    Name = "pg-vpc-sandbox"
-    Type = "dev"
-    User = "tom"
   }
 }
