@@ -136,14 +136,13 @@ module "app_host_sg" {
 }
 
 
-
 ################################################################################
 # Create a regular linux host, place in private subnet
 ################################################################################
 module "ec2_app_host" {
   depends_on     = [module.app_host_sg, aws_key_pair.master_key]
   source         = "github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v2.15.0"
-  instance_count = 1
+  instance_count = 2
 
   name                        = "${data.aws_vpc.selected.tags["Name"]}-app"
   ami                         = data.aws_ami.amazon_linux.id
