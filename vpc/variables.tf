@@ -9,3 +9,14 @@ variable "vpc_name" {
   type        = string
   default     = "pg-sandbox"
 }
+
+variable "vpc_environment" {
+  description = "What type of environment, i.e. 'dev', 'test', 'prod'"
+  type        = string
+  default     = "dev"
+
+  validation {
+    condition     = var.vpc_environment == "dev" ||  var.vpc_environment == "test" || var.vpc_environment == "prod"
+    error_message = "Must be one of 'dev', 'test', or 'prod'."
+  }
+}

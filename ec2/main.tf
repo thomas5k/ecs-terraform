@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-2"
+  region = var.aws_region
 }
 
 ################################################################################
@@ -49,7 +49,7 @@ data "aws_ami" "amazon_linux" {
     name = "name"
 
     values = [
-      "amzn-ami-hvm-*-x86_64-gp2",
+      "amzn2-ami-hvm-*-x86_64-gp2"
     ]
   }
 
@@ -70,7 +70,45 @@ resource "aws_key_pair" "master_key" {
   public_key = var.ec2_ssh_key_pub
 
   tags = {
-    "Environment" = "dev"
+    "Environment" = var.vpc_environment
+  }
+}
+
+################################################################################
+# Security Group For Bastion Host
+################################################################################
+module "bastion_host_sg" {
+  source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
+
+  name            = "ssh"
+  use_name_prefix = false
+  vpc_id          = data.aws_vpc.selected.id
+
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+
+  tags = {
+    "Environment" = var.vpc_environment
+    "Tier"        = "public"
+    "Type"        = "bastion"
+  }
+}
+
+################################################################################
+# Security Group For App Servers
+################################################################################
+module "app_host_sg" {
+  source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
+
+  name            = "app"
+  use_name_prefix = false
+  vpc_id          = data.aws_vpc.selected.id
+
+  ingress_cidr_blocks = [for s in data.aws_subnet.public: s.cidr_block]
+
+  tags = {
+    "Environment" = var.vpc_environment
+    "Tier"        = "public"
+    "Type"        = "bastion"
   }
 }
 
@@ -91,50 +129,11 @@ module "ec2_bastion_host" {
   key_name                    = aws_key_pair.master_key.key_name
 
   tags = {
-    "Environment" = "dev"
+    "Environment" = var.vpc_environment
     "Tier"        = "public"
     "Type"        = "bastion"
   }
 }
-
-################################################################################
-# Security Group For Bastion Host
-################################################################################
-module "bastion_host_sg" {
-  source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
-
-  name            = "ssh"
-  use_name_prefix = false
-  vpc_id          = data.aws_vpc.selected.id
-
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-
-  tags = {
-    "Environment" = "dev"
-    "Tier"        = "public"
-    "Type"        = "bastion"
-  }
-}
-
-################################################################################
-# Security Group For App Servers
-################################################################################
-module "app_host_sg" {
-  source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
-
-  name            = "app"
-  use_name_prefix = false
-  vpc_id          = data.aws_vpc.selected.id
-
-  ingress_cidr_blocks = [for s in data.aws_subnet.public: s.cidr_block]
-
-  tags = {
-    "Environment" = "dev"
-    "Tier"        = "public"
-    "Type"        = "bastion"
-  }
-}
-
 
 ################################################################################
 # Create a regular linux host, place in private subnet
@@ -142,7 +141,7 @@ module "app_host_sg" {
 module "ec2_app_host" {
   depends_on     = [module.app_host_sg, aws_key_pair.master_key]
   source         = "github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v2.15.0"
-  instance_count = 2
+  instance_count = 1
 
   name                        = "${data.aws_vpc.selected.tags["Name"]}-app"
   ami                         = data.aws_ami.amazon_linux.id
@@ -153,7 +152,7 @@ module "ec2_app_host" {
   key_name                    = aws_key_pair.master_key.key_name
 
   tags = {
-    "Environment" = "dev"
+    "Environment" = var.vpc_environment
     "Tier"        = "private"
     "Type"        = "app"
   }
