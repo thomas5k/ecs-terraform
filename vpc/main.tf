@@ -27,4 +27,13 @@ module "vpc" {
   }
 
   vpc_tags = { }
+
+  private_subnet_tags = {
+    Tier = "private"
+  }
+
+  public_subnet_tags = {
+    Tier = "public"
+  }
+
 }
