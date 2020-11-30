@@ -4,6 +4,11 @@ output "vpc_id" {
   value       = module.vpc.vpc_id
 }
 
+output "vpc_arn" {
+  description = "The ARN of the VPC"
+  value       = module.vpc.vpc_arn
+}
+
 # CIDR blocks
 output "vpc_cidr_block" {
   description = "The CIDR block of the VPC"
@@ -32,5 +37,4 @@ output "azs" {
   description = "A list of availability zones spefified as argument to this module"
   value       = module.vpc.azs
 }
-
 
