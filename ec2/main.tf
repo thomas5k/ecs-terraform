@@ -2,6 +2,9 @@ provider "aws" {
   region = "us-east-2"
 }
 
+################################################################################
+# Lookups for VPC, Subnets
+################################################################################
 data "aws_vpc" "selected" {
   filter {
     name   = "tag:Name"
@@ -9,10 +12,22 @@ data "aws_vpc" "selected" {
   }
 }
 
+data "aws_subnet_ids" "private" {
+  vpc_id = data.aws_vpc.selected.id
 
+  tags = {
+    Tier = "private"
+  }
+}
 
-# resource "aws_subnet" "example" {
-#   vpc_id            = data.aws_vpc.selected.id
-#   availability_zone = "us-west-2a"
-#   cidr_block        = cidrsubnet(data.aws_vpc.selected.cidr_block, 4, 1)
-# }
+data "aws_subnet_ids" "public" {
+  vpc_id = data.aws_vpc.selected.id
+
+  tags = {
+    Tier = "public"
+  }
+}
+
+################################################################################
+# Create a bastion host
+################################################################################
