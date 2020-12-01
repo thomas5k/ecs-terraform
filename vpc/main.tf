@@ -2,6 +2,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 ################################################################################
 # Set up VPC, Subnets, NAT Gateways
 ################################################################################
@@ -12,13 +16,16 @@ module "vpc" {
 
   cidr = "10.0.0.0/16"
 
-  azs             = ["us-east-2a", "us-east-2b"]
+  # just use fist 2 AZs since we're hard-coding 2 subnet cidrs per tier
+  azs             = slice(data.aws_availability_zones.available.names, 1, 3)
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
 
   enable_ipv6 = false
 
-  enable_nat_gateway = true
+  # Disabling NAT Gateways will prevent private EC2s from accessing
+  # the internet, but saves the $$ of runnning NAT Gateway instance hours
+  enable_nat_gateway = false
   single_nat_gateway = true
 
   tags = {
