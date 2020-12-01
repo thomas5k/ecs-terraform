@@ -75,12 +75,12 @@ resource "aws_key_pair" "master_key" {
 }
 
 ################################################################################
-# Security Group For Bastion Host
+# Security Group For Bastion Host (SSH)
 ################################################################################
 module "bastion_host_sg" {
   source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
 
-  name            = "ssh"
+  name            = "${data.aws_vpc.selected.tags["Name"]}-bastion-ssh"
   use_name_prefix = false
   vpc_id          = data.aws_vpc.selected.id
 
@@ -94,12 +94,28 @@ module "bastion_host_sg" {
 }
 
 ################################################################################
-# Security Group For App Servers
+# Security Group For App Servers (SSH)
 ################################################################################
-module "app_host_sg" {
+module "app_host_ssh_sg" {
   source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
 
-  name            = "app"
+  name            = "${data.aws_vpc.selected.tags["Name"]}-app-ssh"
+  use_name_prefix = false
+  vpc_id          = data.aws_vpc.selected.id
+
+  ingress_cidr_blocks = [for s in data.aws_subnet.public: s.cidr_block]
+
+  tags = {
+    "Environment" = var.vpc_environment
+    "Tier"        = "private"
+    "Type"        = "app"
+  }
+}
+
+module "app_host_http_sg" {
+  source = "github.com/terraform-aws-modules/terraform-aws-security-group/modules/ssh"
+
+  name            = "app-ssh"
   use_name_prefix = false
   vpc_id          = data.aws_vpc.selected.id
 
@@ -113,7 +129,7 @@ module "app_host_sg" {
 }
 
 ################################################################################
-# Create a bastion host, place it in all public subnets
+# EC2 bastion host, place it in all public subnets
 ################################################################################
 module "ec2_bastion_host" {
   depends_on     = [module.bastion_host_sg, aws_key_pair.master_key]
@@ -136,10 +152,10 @@ module "ec2_bastion_host" {
 }
 
 ################################################################################
-# Create a regular linux host, place in private subnet
+# EC2 linux host, place in private subnets
 ################################################################################
 module "ec2_app_host" {
-  depends_on     = [module.app_host_sg, aws_key_pair.master_key]
+  depends_on     = [module.app_host_ssh_sg, aws_key_pair.master_key]
   source         = "github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v2.15.0"
   instance_count = 1
 
@@ -147,7 +163,7 @@ module "ec2_app_host" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t2.micro"
   subnet_ids                  = data.aws_subnet_ids.private.ids
-  vpc_security_group_ids      = [module.app_host_sg.this_security_group_id]
+  vpc_security_group_ids      = [module.app_host_ssh_sg.this_security_group_id]
   associate_public_ip_address = false
   key_name                    = aws_key_pair.master_key.key_name
 
