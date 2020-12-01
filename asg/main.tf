@@ -4,6 +4,24 @@ locals {
 
   # This is the convention we use to know what belongs to each other
   ec2_resources_name = "${local.name}-${local.environment}"
+
+  tags = concat([
+    {
+      key                 = "Environment"
+      value               = local.environment
+      propagate_at_launch = true
+    },
+    {
+      key                 = "Cluster"
+      value               = local.name
+      propagate_at_launch = true
+    },
+    {
+      key                 = "Tier"
+      value               = "private"
+      propagate_at_launch = true
+    }
+  ], var.additional_tags)
 }
 
 provider "aws" {
@@ -123,7 +141,7 @@ module "asg" {
   name = local.ec2_resources_name
 
   # Launch configuration
-  lc_name = local.ec2_resources_name
+  lc_name              = local.ec2_resources_name
   image_id             = data.aws_ami.amazon_linux_ecs.id
   instance_type        = "t2.micro"
   security_groups      = [module.ecs_asg_host_sg.this_security_group_id]
@@ -139,21 +157,5 @@ module "asg" {
   desired_capacity          = 1
   wait_for_capacity_timeout = 0
 
-  tags = [
-    {
-      key                 = "Environment"
-      value               = local.environment
-      propagate_at_launch = true
-    },
-    {
-      key                 = "Cluster"
-      value               = local.name
-      propagate_at_launch = true
-    },
-    {
-      key                 = "Tier"
-      value               = "private"
-      propagate_at_launch = true
-    },
-  ]
+  tags = local.tags
 }
