@@ -123,6 +123,12 @@ module "app_host_sg" {
   # Rules are in https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules       = ["http-80-tcp", "all-icmp", "ssh-tcp"]
   egress_rules        = ["all-all"]
+
+  tags = {
+    "Environment" = var.vpc_environment
+    "Tier"        = "private"
+    "Type"        = "app"
+  }
 }
 
 ################################################################################
