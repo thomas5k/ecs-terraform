@@ -10,6 +10,7 @@ provider "aws" {
   region = var.aws_region
 }
 
+
 ################################################################################
 # Lookup VPC
 ################################################################################
@@ -68,19 +69,31 @@ data "aws_subnet_ids" "private" {
 }
 
 ################################################################################
+# Create SSH Keypair
+################################################################################
+resource "aws_key_pair" "ecs_key" {
+  key_name   = "${data.aws_vpc.selected.tags["Name"]}-ecs-key"
+  public_key = var.ec2_ssh_key_pub
+
+  tags = {
+    "Environment" = var.vpc_environment
+  }
+}
+
+################################################################################
 # Create Security Group for ECS ASG Hosts
 ################################################################################
 module "ecs_asg_host_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
+  source = "terraform-aws-modules/security-group/aws"
 
   name        = "${data.aws_vpc.selected.tags["Name"]}-ecs-asg-sg"
   description = "Allow SSH and HTTP traffic from public subnet CIDR blocks."
   vpc_id      = data.aws_vpc.selected.id
 
-  ingress_cidr_blocks = [for s in data.aws_subnet.public: s.cidr_block]
+  ingress_cidr_blocks = [for s in data.aws_subnet.public : s.cidr_block]
   # Rules are in https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
-  ingress_rules       = ["http-80-tcp", "all-icmp", "ssh-tcp"]
-  egress_rules        = ["all-all"]
+  ingress_rules = ["http-80-tcp", "all-icmp", "ssh-tcp"]
+  egress_rules  = ["all-all"]
 
   tags = {
     "Environment" = var.vpc_environment
@@ -111,11 +124,11 @@ module "asg" {
 
   # Launch configuration
   lc_name = local.ec2_resources_name
-
   image_id             = data.aws_ami.amazon_linux_ecs.id
   instance_type        = "t2.micro"
   security_groups      = [module.ecs_asg_host_sg.this_security_group_id]
   iam_instance_profile = module.ec2_profile.this_iam_instance_profile_id
+  key_name             = aws_key_pair.ecs_key.key_name
 
   # Auto scaling group
   asg_name                  = local.ec2_resources_name
@@ -123,7 +136,7 @@ module "asg" {
   health_check_type         = "EC2"
   min_size                  = 0
   max_size                  = 2
-  desired_capacity          = 1 # we don't need them for the example
+  desired_capacity          = 1
   wait_for_capacity_timeout = 0
 
   tags = [
