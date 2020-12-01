@@ -9,6 +9,12 @@ variable "vpc_environment" {
   }
 }
 
+variable "ecs_cluster_name" {
+  description = "Cluster name (optional)"
+  type        = string
+  default     = ""
+}
+
 variable "aws_region" {
   description = "AWS Region to place resources (AZs are fixed here, so this must be us-east-2 for now)"
   type        = string

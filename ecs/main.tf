@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 locals {
-  name = "${var.vpc_name}-ecs"
+  name = var.ecs_cluster_name == "" ? "${var.vpc_name}-ecs" : var.ecs_cluster_name
 }
 
 ################################################################################
