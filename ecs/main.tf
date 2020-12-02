@@ -97,3 +97,12 @@ module "hello_world_service" {
   vpc_name        = var.vpc_name
   ecs_cluster_id  = aws_ecs_cluster.this.id
 }
+
+module "nginx_service" {
+  source = "./nginx_service"
+
+  vpc_environment = var.vpc_environment
+  aws_region      = var.aws_region
+  vpc_name        = var.vpc_name
+  ecs_cluster_id  = aws_ecs_cluster.this.id
+}

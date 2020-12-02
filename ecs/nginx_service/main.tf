@@ -1,6 +1,6 @@
 locals {
-  name              = "hello-world-service"
-  hello_world_image = "hello-world"
+  name  = "nginx-service"
+  image = "nginx"
 }
 
 provider "aws" {
@@ -8,31 +8,44 @@ provider "aws" {
 }
 
 ##########################################################################################
-# Cloudwatch Logs (hello_world)
+# Cloudwatch Logs
 ##########################################################################################
-resource "aws_cloudwatch_log_group" "hello_world_log_group" {
+resource "aws_cloudwatch_log_group" "nginx_cloudwatch_logs" {
   name              = "/ecs/${var.vpc_environment}/${local.name}"
   retention_in_days = 1
 }
 
 ##########################################################################################
-# ECS Task (hello_world)
+# ECS Task 
 ##########################################################################################
-resource "aws_ecs_task_definition" "hello_world" {
-  family = "hello-world"
+resource "aws_ecs_task_definition" "nginx_task" {
+  family = local.name
 
   container_definitions = <<EOF
 [
   {
-    "name": "hello-world-task",
-    "image": "${local.hello_world_image}",
+    "name": "${local.name}",
+    "image": "${local.image}",
     "cpu": 0,
+    "environment": [
+      {
+        "name": "APP_ENV",
+        "value": "${var.vpc_environment}"
+      }
+    ],
+    "portMappings": [
+      {
+        "hostPort": 0,
+        "protocol": "tcp",
+        "containerPort": 80
+      }
+    ],
     "memory": 128,
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
         "awslogs-region": "${var.aws_region}",
-        "awslogs-group": "${aws_cloudwatch_log_group.hello_world_log_group.name}",
+        "awslogs-group": "${aws_cloudwatch_log_group.nginx_cloudwatch_logs.name}",
         "awslogs-stream-prefix": "ecs"
       }
     }
@@ -42,12 +55,12 @@ EOF
 }
 
 ##########################################################################################
-# ECS Service (hello_world)
+# ECS Service
 ##########################################################################################
-resource "aws_ecs_service" "hello_world_service" {
+resource "aws_ecs_service" "nginx_service" {
   name            = local.name
   cluster         = var.ecs_cluster_id
-  task_definition = aws_ecs_task_definition.hello_world.arn
+  task_definition = aws_ecs_task_definition.nginx_task.arn
 
   desired_count = 1
 
