@@ -3,6 +3,7 @@ locals {
   environment = var.vpc_environment
 
   # This is the convention we use to know what belongs to each other
+  # TODO this probably should change
   ec2_resources_name = "${local.name}-${local.environment}"
 
   tags = concat([
@@ -121,18 +122,21 @@ module "ecs_asg_host_sg" {
 }
 
 ################################################################################
-# Look up IAM Policy for ECS and apply to EC2
+# Create Instance Policy Role
 ################################################################################
-module "ec2_profile" {
-  # TODO is this where this belongs?
-  source = "github.com/terraform-aws-modules/terraform-aws-ecs/modules/ecs-instance-profile"
+# See https://docs.aws.amazon.com/autoscaling/ec2/userguide/us-iam-role.html for
+# why this is necessary when using a launch configuration
 
-  name = local.name
-
+module "ecs_instance_profile" {
+  source  = "terraform-aws-modules/ecs/aws//modules/ecs-instance-profile"
+  version = "2.5.0"
+  name = "my-instance-profile"
+  include_ssm = true
   tags = {
-    Environment = local.environment
+    Environment = var.vpc_environment
   }
 }
+
 
 module "asg" {
   source  = "terraform-aws-modules/autoscaling/aws"
@@ -145,7 +149,8 @@ module "asg" {
   image_id             = data.aws_ami.amazon_linux_ecs.id
   instance_type        = "t2.micro"
   security_groups      = [module.ecs_asg_host_sg.this_security_group_id]
-  iam_instance_profile = module.ec2_profile.this_iam_instance_profile_id
+  # service_linked_role_arn = "arn:aws:iam::770376200063:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+  iam_instance_profile = module.ecs_instance_profile.this_iam_instance_profile_id
   key_name             = aws_key_pair.ecs_key.key_name
 
   # Auto scaling group
@@ -154,7 +159,7 @@ module "asg" {
   health_check_type         = "EC2"
   min_size                  = 0
   max_size                  = 2
-  desired_capacity          = 1
+  desired_capacity          = 0
   wait_for_capacity_timeout = 0
 
   tags = local.tags
