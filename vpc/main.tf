@@ -10,7 +10,7 @@ data "aws_availability_zones" "available" {
 # Set up VPC, Subnets, NAT Gateways
 ################################################################################
 module "vpc" {
-  source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.64.0"
+  source = "terraform-aws-modules/vpc/aws"
 
   name = var.vpc_name
 
