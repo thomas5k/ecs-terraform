@@ -3,6 +3,8 @@ provider "aws" {
 }
 
 locals {
+  # Be sure to configure our instances so that the cluster name gets specified via
+  # the ECS_CLUSTER variable in /etc/ecs/ecs.config. 
   name = var.ecs_cluster_name == "" ? "${var.vpc_name}-ecs" : var.ecs_cluster_name
 }
 
@@ -34,11 +36,20 @@ module "aws_asg" {
   ]
 }
 
+resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
+  aws_service_name = "ecs.amazonaws.com"
+
+  # TF won't ever be able to delete a service linked role
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+
 ################################################################################
 # Create a Capacity Provider with our ASG
 ################################################################################
 resource "aws_ecs_capacity_provider" "ecs_provider" {
-  depends_on = [module.aws_asg]
   name       = local.name
 
   auto_scaling_group_provider {
