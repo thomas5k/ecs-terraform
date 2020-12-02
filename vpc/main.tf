@@ -25,7 +25,7 @@ module "vpc" {
 
   # Disabling NAT Gateways will prevent private EC2s from accessing
   # the internet, but saves the $$ of runnning NAT Gateway instance hours
-  enable_nat_gateway = false
+  enable_nat_gateway = true
   single_nat_gateway = true
 
   tags = {
