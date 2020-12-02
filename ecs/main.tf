@@ -23,10 +23,11 @@ data "aws_vpc" "selected" {
 # TODO should this just be the regular resource or community module?
 ################################################################################
 module "aws_asg" {
-  source          = "./asg"
-  vpc_environment = var.vpc_environment
-  aws_region      = var.aws_region
-  vpc_name        = var.vpc_name
+  source           = "./asg"
+  vpc_environment  = var.vpc_environment
+  aws_region       = var.aws_region
+  vpc_name         = var.vpc_name
+  ecs_cluster_name = local.name
   additional_tags = [
     {
       key                 = "AmazonECSManaged"
@@ -50,7 +51,7 @@ resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
 # Create a Capacity Provider with our ASG
 ################################################################################
 resource "aws_ecs_capacity_provider" "ecs_provider" {
-  name       = local.name
+  name = local.name
 
   auto_scaling_group_provider {
     auto_scaling_group_arn = module.aws_asg.this_autoscaling_group_arn

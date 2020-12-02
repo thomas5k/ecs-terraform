@@ -23,6 +23,11 @@ locals {
       propagate_at_launch = true
     }
   ], var.additional_tags)
+
+  user_data = <<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
+EOF
 }
 
 provider "aws" {
@@ -121,26 +126,29 @@ module "ecs_asg_host_sg" {
   }
 }
 
+
 ################################################################################
 # Create Instance Policy Role
 ################################################################################
 # See https://docs.aws.amazon.com/autoscaling/ec2/userguide/us-iam-role.html for
 # why this is necessary when using a launch configuration
-
 module "ecs_instance_profile" {
-  source  = "terraform-aws-modules/ecs/aws//modules/ecs-instance-profile"
-  version = "2.5.0"
-  name = "my-instance-profile"
+  source      = "terraform-aws-modules/ecs/aws//modules/ecs-instance-profile"
+  version     = "2.5.0"
+  name        = "my-instance-profile"
   include_ssm = true
   tags = {
     Environment = var.vpc_environment
   }
 }
 
-
+################################################################################
+# Create the Auto Scaling Group
+################################################################################
 module "asg" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 3.0"
+  source     = "terraform-aws-modules/autoscaling/aws"
+  version    = "~> 3.0"
+  depends_on = [module.ecs_instance_profile]
 
   name = local.ec2_resources_name
 
@@ -149,9 +157,9 @@ module "asg" {
   image_id             = data.aws_ami.amazon_linux_ecs.id
   instance_type        = "t2.micro"
   security_groups      = [module.ecs_asg_host_sg.this_security_group_id]
-  # service_linked_role_arn = "arn:aws:iam::770376200063:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
   iam_instance_profile = module.ecs_instance_profile.this_iam_instance_profile_id
   key_name             = aws_key_pair.ecs_key.key_name
+  user_data_base64     = base64encode(local.user_data)
 
   # Auto scaling group
   asg_name                  = local.ec2_resources_name

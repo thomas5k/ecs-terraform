@@ -32,3 +32,9 @@ variable "additional_tags" {
   type        = list
   default     = []
 }
+
+variable "ecs_cluster_name" {
+  description = "The name of the ECS Cluster to register instances with."
+  type        = string
+
+}
