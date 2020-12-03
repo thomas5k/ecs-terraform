@@ -2,6 +2,7 @@ provider "aws" {
   region = var.aws_region
 }
 
+
 ################################################################################
 # Lookup VPC
 ################################################################################
@@ -9,6 +10,42 @@ data "aws_vpc" "selected" {
   filter {
     name   = "tag:Name"
     values = [var.vpc_name]
+  }
+}
+
+################################################################################
+# Create Security Group for ALB
+################################################################################
+resource "aws_security_group" "alb_sg" {
+  name        = "${var.vpc_name}-alb-sg"
+  description = "Allow 80 and 443 into LB."
+  vpc_id      = data.aws_vpc.selected.id
+
+  ingress {
+    from_port   = "80"
+    to_port     = "80"
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = "443"
+    to_port     = "443"
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = "0"
+    to_port     = "0"
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.vpc_name}-alb-sg"
+    Environment = var.vpc_environment
+    Terraform   = "true"
   }
 }
 
@@ -24,70 +61,45 @@ data "aws_subnet_ids" "public" {
 }
 
 ################################################################################
-# Create SG for this ALB allowing all HTTP and Ping traffic in
+# Create actual ALB
 ################################################################################
-module "alb_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-
-  name        = "${data.aws_vpc.selected.tags["Name"]}-alb-sg"
-  description = "Security group for example usage with ALB"
-  vpc_id      = data.aws_vpc.selected.id
-
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-  ingress_rules       = ["http-80-tcp", "all-icmp"]
-  egress_rules        = ["all-all"]
-}
-
-
-################################################################################
-# Create the ALB
-################################################################################
-module "alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "~> 5.0"
-  
-  name = "my-alb"
-
+resource "aws_alb" "alb" {
+  name               = "${var.vpc_name}-alb"
+  idle_timeout       = 1000
+  internal           = false
   load_balancer_type = "application"
-
-  vpc_id             = data.aws_vpc.selected.id
+  security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnet_ids.public.ids
-  security_groups    = [module.alb_security_group.this_security_group_id]
-  
-  # access_logs = {
-  #   bucket = "my-alb-logs"
+
+  # access_logs {
+  #   # TODO by pod?
+  #   bucket  = "${var.aws_s3_alb_log_bucket}"
+  #   prefix  = "${var.environment}-alb-logs"
+  #   enabled = true
   # }
 
-  target_groups = [
-    {
-      name_prefix      = "http-"
-      backend_protocol = "HTTP"
-      backend_port     = 80
-      target_type      = "instance"
-      deregistration_delay = 10
-      health_check = {
-        enabled             = true
-        interval            = 30
-        path                = "/"
-        port                = "traffic-port"
-        healthy_threshold   = 3
-        unhealthy_threshold = 3
-        timeout             = 6
-        protocol            = "HTTP"
-        matcher             = "200-399"
-      }
-    }
-  ]
-
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-    }
-  ]
-
   tags = {
+    Name        = "${var.vpc_name}-alb"
     Environment = var.vpc_environment
+    Terraform   = "true"
+  }
+}
+
+################################################################################
+# ALB Listener (Port 80)
+################################################################################
+resource "aws_alb_listener" "alb_http_listener" {
+  load_balancer_arn = aws_alb.alb.arn
+  port = "80"
+  protocol = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Normally we'd have a redirect or actual TG forward here, but I want to test explicit tgs separate from the default action."
+      status_code  = "200"
+    }
   }
 }
