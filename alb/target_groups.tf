@@ -7,7 +7,8 @@ resource "aws_alb_target_group" "nginx_tg" {
 
   health_check {
     path    = "/"
-    port    = "8080"
+    # if ECS task (service?) def is using dynamic port, this fails when we put a port here
+    port    = "traffic-port"
     matcher = "200"
   }
 
