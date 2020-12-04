@@ -40,10 +40,10 @@ module "aws_asg" {
 resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
   aws_service_name = "ecs.amazonaws.com"
 
-  # TF won't ever be able to delete a service linked role
-  lifecycle {
-    prevent_destroy = true
-  }
+  # # TF won't ever be able to delete a service linked role
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 
@@ -62,6 +62,7 @@ resource "aws_ecs_capacity_provider" "ecs_provider" {
     }
   }
 }
+
 
 ################################################################################
 # Create the ECS Cluster
@@ -84,18 +85,6 @@ resource "aws_ecs_cluster" "this" {
   tags = {
     Environment = var.vpc_environment
   }
-}
-
-################################################################################
-# Create Hello World Service
-################################################################################
-module "hello_world_service" {
-  source = "./hello_world_service"
-
-  vpc_environment = var.vpc_environment
-  aws_region      = var.aws_region
-  vpc_name        = var.vpc_name
-  ecs_cluster_id  = aws_ecs_cluster.this.id
 }
 
 module "nginx_service" {
