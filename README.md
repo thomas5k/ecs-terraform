@@ -17,6 +17,86 @@ ECS Stuff
 * ECS Service (registered against target group)
 * ECS Task (nginx)
 
+
+# Create
+You'll use the same terraform commands for all sections
+
+```
+terraform init
+terraform plan
+terraform apply
+```
+
+`terraform init` will retrieve any required modules from the terraform registry, github, or bitbucket.
+
+`terraform plan` will show you the resoruces to be created/updated/destroyed
+
+`terraform apply` will apply the changes.
+
+This should be done in these directories, in order
+
+```bash
+# Make the VPC first
+cd vpc
+terraform init
+terraform plan
+terraform apply
+
+# Create the ALB
+cd ../alb
+terraform init
+terraform plan
+terraform apply
+
+# Create ECS Task/Service/TG/Listener Group
+cd ../ecs
+terraform init
+terraform plan
+terraform apply
+
+# (Optional) Create bastion host and, if desired
+# regular EC2s (ec2/main.tf for details)
+cd ../ec2
+terraform init
+terraform plan
+terraform apply
+```
+
+# Destroy
+You'll destroy all of the above resources opposite of the order you created them
+
+```
+cd ecs
+terraform destroy
+
+cd ../ecs
+terraform destroy
+
+cd ../alb
+terraform destroy
+
+cd ../vpc
+terraform destroy
+```
+
+Some resources may take time to destroy. For example, ECS will be attempting to keep your service running _as you destroy it and the ASG underneath it_, which may take some time. You can re-run `terraform destroy` or go into the AWS Console to remove the resource.
+
+Don't panic! Some resources take time to destroy!
+In particular, it takes time to drain ECS tasks from the cluster, drain the ALB Target Groups, and
+drain all of the instances out of the ASG.
+
+# What Will This Cost Me?
+All billable resources created here (EC2, CloudWatch Logs) are in the AWS Free Tier, EXCEPT THE NAT GATEWAY.
+
+The NAT Gateway is billed by the hour regardless of
+whether or not you use it.
+
+You should destroy all the resources when you are
+not actively using them, lest you wind up with a
+$50 AWS bill for your highly-available, horizontally scalable, containerized Hello World application.
+
+In the creation of this project, I ran up a bill of about $3. Do the math on that and you'll see that I have no idea what I'm doing.
+
 # Pricing Considerations
 
 ## $$ - NAT Gateway vs PrivateLink Endpoints
