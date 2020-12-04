@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.aws_region
-}
-
 locals {
   # Be sure to configure our instances so that the cluster name gets specified via
   # the ECS_CLUSTER variable in /etc/ecs/ecs.config. 
@@ -27,7 +23,9 @@ module "aws_asg" {
   vpc_environment  = var.vpc_environment
   aws_region       = var.aws_region
   vpc_name         = var.vpc_name
+  ec2_ssh_key_pub  = var.ec2_ssh_key_pub
   ecs_cluster_name = local.name
+
   additional_tags = [
     {
       key                 = "AmazonECSManaged"

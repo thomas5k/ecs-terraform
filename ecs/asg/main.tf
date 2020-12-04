@@ -31,10 +31,6 @@ echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
 EOF
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 
 ################################################################################
 # Lookup VPC
