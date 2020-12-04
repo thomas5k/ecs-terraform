@@ -24,6 +24,7 @@ locals {
     }
   ], var.additional_tags)
 
+  # Create ecs.config file so that instances register with the cluster
   user_data = <<EOF
 #!/bin/bash
 echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
@@ -108,16 +109,40 @@ resource "aws_key_pair" "ecs_key" {
 # Create Security Group for ECS ASG Hosts
 ################################################################################
 module "ecs_asg_host_sg" {
-  source = "terraform-aws-modules/security-group/aws"
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "3.17.0"
 
   name        = "${data.aws_vpc.selected.tags["Name"]}-ecs-asg-sg"
-  description = "Allow SSH and HTTP traffic from public subnet CIDR blocks."
+  description = "Public to Private Subnet Traffic"
   vpc_id      = data.aws_vpc.selected.id
 
   ingress_cidr_blocks = [for s in data.aws_subnet.public : s.cidr_block]
   # Rules are in https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules = ["http-80-tcp", "all-icmp", "ssh-tcp"]
-  egress_rules  = ["all-all"]
+
+  # Ephemeral port ranges are 49153–65535 and 32768–61000
+  ingress_with_cidr_blocks = [
+    {
+      from_port = 32768
+      to_port = 61000
+      protocol = "tcp"
+      description = "Ephemeral Container Ports"
+      # TODO calculate these dynamically by checking the public subnets
+      cidr_blocks = data.aws_vpc.selected.cidr_block
+    },
+    {
+      from_port = 49153
+      to_port = 65535
+      protocol = "tcp"
+      description = "Ephemeral Container Ports"
+      # TODO calculate these dynamically by checking the public subnets
+      cidr_blocks = data.aws_vpc.selected.cidr_block
+    }
+  ]
+
+  # Instances need either outbound internet access OR access to VPC PrivateLink endpoints
+  # for ECS, SSM, and other AS services as-needed.
+  egress_rules = ["all-all"]
 
   tags = {
     "Environment" = var.vpc_environment
