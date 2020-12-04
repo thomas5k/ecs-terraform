@@ -63,7 +63,7 @@ data "aws_subnet_ids" "public" {
 ################################################################################
 # Create actual ALB
 ################################################################################
-resource "aws_alb" "alb" {
+resource "aws_lb" "alb" {
   name               = "${var.vpc_name}-alb"
   idle_timeout       = 1000
   internal           = false
@@ -88,8 +88,8 @@ resource "aws_alb" "alb" {
 ################################################################################
 # ALB Listener (Port 80)
 ################################################################################
-resource "aws_alb_listener" "alb_http_listener" {
-  load_balancer_arn = aws_alb.alb.arn
+resource "aws_lb_listener" "alb_http_listener" {
+  load_balancer_arn = aws_lb.alb.arn
   port = "80"
   protocol = "HTTP"
 
