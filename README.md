@@ -120,6 +120,27 @@ instances has these ephemeral port ranges open.
 49153 - 65535
 ```
 
+## Cluster Destroy Times Out
+See https://github.com/hashicorp/terraform-provider-aws/issues/4852
+
+```
+....
+module.aws_ecs.aws_ecs_cluster.this: Still destroying... [id=arn:aws:ecs:us-east-2:770376200063:cluster/my-vpc-cluster, 9m50s elapsed]
+
+Error: Error deleting ECS cluster: ClusterContainsContainerInstancesException: The Cluster cannot be deleted while Container Instances are active or draining.
+```
+
+As a quick hack, force the ASG to scale down to 0, e.g.
+
+```bash
+# Look up the ASG name...
+aws autoscaling describe-auto-scaling-groups
+
+aws autoscaling update-auto-scaling-group --auto-scaling-group-name "my-vpc-ecs-asg-dev-20201204235248083100000006" --min-size 0 --desired-capacity 0
+```
+
+
+
 # Related Links
 * https://registry.terraform.io/search/modules?namespace=terraform-aws-modules
 * https://github.com/terraform-aws-modules/
