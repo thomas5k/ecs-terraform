@@ -12,3 +12,23 @@ variable "vpc_environment" {
   description = "What type of environment, i.e. 'dev', 'test', 'prod'"
   type        = string
 }
+
+variable "azs" {
+  description = "Network topology of CIDRS and subnets."
+  type = list
+}
+
+variable "private_subnets" {
+  description = "Network topology of CIDRS and subnets."
+  type = list
+}
+
+variable "public_subnets" {
+  description = "Network topology of CIDRS and subnets."
+  type = list
+}
+
+variable "vpc_cidr" {
+  description = "CIDR for entire VPC."
+  type = string
+}

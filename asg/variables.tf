@@ -29,3 +29,19 @@ variable "ec2_ssh_key_pub" {
   description = "Public key as it would appear in in authorized_keys"
   type        = string
 }
+
+variable "public_subnets" {
+  description = "List of public subnet CIDRs."
+  type = list
+}
+
+variable "private_subnets" {
+  description = "List of private subnet CIDRs."
+  type = list
+}
+
+variable "azs" {
+  description = "List availaibility zones for the ASG to operate in."
+  type = list
+}
+

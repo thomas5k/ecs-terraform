@@ -1,7 +1,5 @@
 locals {
-  # Be sure to configure our instances so that the cluster name gets specified via
-  # the ECS_CLUSTER variable in /etc/ecs/ecs.config. 
-  name = var.ecs_cluster_name == "" ? "${var.vpc_name}-ecs" : var.ecs_cluster_name
+  name = var.ecs_cluster_name
 }
 
 ################################################################################
@@ -14,27 +12,6 @@ data "aws_vpc" "selected" {
   }
 }
 
-################################################################################
-# Create an ASG using our module
-# TODO should this just be the regular resource or community module?
-################################################################################
-module "aws_asg" {
-  source           = "./asg"
-  vpc_environment  = var.vpc_environment
-  aws_region       = var.aws_region
-  vpc_name         = var.vpc_name
-  ec2_ssh_key_pub  = var.ec2_ssh_key_pub
-  ecs_cluster_name = local.name
-
-  additional_tags = [
-    {
-      key                 = "AmazonECSManaged"
-      value               = ""
-      propagate_at_launch = true
-    }
-  ]
-}
-
 resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
   aws_service_name = "ecs.amazonaws.com"
 
@@ -44,7 +21,6 @@ resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
   # }
 }
 
-
 ################################################################################
 # Create a Capacity Provider with our ASG
 ################################################################################
@@ -52,15 +28,18 @@ resource "aws_ecs_capacity_provider" "ecs_provider" {
   name = local.name
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn = module.aws_asg.this_autoscaling_group_arn
+    auto_scaling_group_arn = var.autoscaling_group_arn
 
     managed_scaling {
       status          = "ENABLED"
       target_capacity = 1
     }
   }
-}
 
+  tags = {
+    Environment = var.vpc_environment
+  }
+}
 
 ################################################################################
 # Create the ECS Cluster

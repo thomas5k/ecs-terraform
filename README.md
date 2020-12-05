@@ -13,13 +13,15 @@ ECS Stuff
 * Security Groups (ALB -> ASG Hosts, Bastion -> ASG Hosts)
 * Load Balancer
 * Target Group
+* Service-Linked Role for ECS
 * ECS Cluster
 * ECS Service (registered against target group)
 * ECS Task (nginx)
 
 
 # Create
-You'll use the same terraform commands for all sections
+Terraform is uses the same 3 commands for all modules. This project is a set of modules composed
+upon each other, so you'll need to only do this once.
 
 ```
 terraform init
@@ -29,53 +31,16 @@ terraform apply
 
 `terraform init` will retrieve any required modules from the terraform registry, github, or bitbucket.
 
-`terraform plan` will show you the resoruces to be created/updated/destroyed
+`terraform plan` will show you the resources to be created/updated/destroyed
 
 `terraform apply` will apply the changes.
 
-This should be done in these directories, in order
-
-```bash
-# Make the VPC first
-cd vpc
-terraform init
-terraform plan
-terraform apply
-
-# Create the ALB
-cd ../alb
-terraform init
-terraform plan
-terraform apply
-
-# Create ECS Task/Service/TG/Listener Group
-cd ../ecs
-terraform init
-terraform plan
-terraform apply
-
-# (Optional) Create bastion host and, if desired
-# regular EC2s (ec2/main.tf for details)
-cd ../ec2
-terraform init
-terraform plan
-terraform apply
 ```
 
 # Destroy
-You'll destroy all of the above resources opposite of the order you created them
+You'll destroy all of the above resources opposite of the order you created them using `terraform destroy`.
 
 ```
-cd ecs
-terraform destroy
-
-cd ../ecs
-terraform destroy
-
-cd ../alb
-terraform destroy
-
-cd ../vpc
 terraform destroy
 ```
 

@@ -9,13 +9,12 @@ module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
   name = var.vpc_name
-
-  cidr = "10.0.0.0/16"
+  cidr = var.vpc_cidr
 
   # just use fist 2 AZs since we're hard-coding 2 subnet cidrs per tier
-  azs             = slice(data.aws_availability_zones.available.names, 1, 3)
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
+  azs             = var.azs
+  private_subnets = var.private_subnets
+  public_subnets  = var.public_subnets
 
   enable_ipv6 = false
 
@@ -25,11 +24,10 @@ module "vpc" {
   single_nat_gateway = true
 
   tags = {
-    Owner       = "tom"
     Environment = var.vpc_environment
   }
 
-  vpc_tags = { }
+  vpc_tags = {}
 
   private_subnet_tags = {
     Tier = "private"
@@ -38,5 +36,14 @@ module "vpc" {
   public_subnet_tags = {
     Tier = "public"
   }
+}
 
+
+resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
+  aws_service_name = "ecs.amazonaws.com"
+
+  # # TF won't ever be able to delete a service linked role
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }

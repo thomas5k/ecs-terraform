@@ -8,24 +8,6 @@ data "aws_vpc" "selected" {
   }
 }
 
-################################################################################
-# Look up subnets
-################################################################################
-data "aws_subnet_ids" "private" {
-  vpc_id = data.aws_vpc.selected.id
-
-  tags = {
-    Tier = "private"
-  }
-}
-
-data "aws_subnet_ids" "public" {
-  vpc_id = data.aws_vpc.selected.id
-
-  tags = {
-    Tier = "public"
-  }
-}
 
 # Public Subnet info, using ids from data.aws_subnet_ids above
 data "aws_subnet" "public" {

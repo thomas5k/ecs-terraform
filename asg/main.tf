@@ -62,34 +62,6 @@ data "aws_ami" "amazon_linux_ecs" {
 }
 
 ################################################################################
-# Look up public subnets
-################################################################################
-data "aws_subnet_ids" "public" {
-  vpc_id = data.aws_vpc.selected.id
-
-  tags = {
-    Tier = "public"
-  }
-}
-
-# Public Subnet info, using ids from data.aws_subnet_ids above
-data "aws_subnet" "public" {
-  for_each = data.aws_subnet_ids.public.ids
-  id       = each.value
-}
-
-################################################################################
-# Look up private subnets
-################################################################################
-data "aws_subnet_ids" "private" {
-  vpc_id = data.aws_vpc.selected.id
-
-  tags = {
-    Tier = "private"
-  }
-}
-
-################################################################################
 # Create SSH Keypair
 ################################################################################
 resource "aws_key_pair" "ecs_key" {
@@ -112,7 +84,7 @@ module "ecs_asg_host_sg" {
   description = "Public to Private Subnet Traffic"
   vpc_id      = data.aws_vpc.selected.id
 
-  ingress_cidr_blocks = [for s in data.aws_subnet.public : s.cidr_block]
+  ingress_cidr_blocks = var.public_subnets
   # Rules are in https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules = ["http-80-tcp", "all-icmp", "ssh-tcp"]
 
@@ -163,6 +135,14 @@ module "ecs_instance_profile" {
   }
 }
 
+data "aws_subnet_ids" "private_subnets" {
+  vpc_id = data.aws_vpc.selected.id
+  filter {
+    name = "cidr-block"
+    values = var.private_subnets
+  }
+}
+
 ################################################################################
 # Create the Auto Scaling Group
 ################################################################################
@@ -184,7 +164,7 @@ module "asg" {
 
   # Auto scaling group
   asg_name                  = local.ec2_resources_name
-  vpc_zone_identifier       = data.aws_subnet_ids.private.ids
+  vpc_zone_identifier       = data.aws_subnet_ids.private_subnets.ids
   health_check_type         = "EC2"
   min_size                  = 0
   max_size                  = 2

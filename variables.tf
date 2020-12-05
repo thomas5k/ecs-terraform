@@ -13,7 +13,7 @@ variable "vpc_environment" {
   type        = string
 
   validation {
-    condition     = var.vpc_environment == "dev" ||  var.vpc_environment == "test" || var.vpc_environment == "prod"
+    condition     = var.vpc_environment == "dev" || var.vpc_environment == "test" || var.vpc_environment == "prod"
     error_message = "Must be one of 'dev', 'test', or 'prod'."
   }
 }
@@ -22,4 +22,20 @@ variable "ec2_ssh_key_pub" {
   description = "Public key as it would appear in in authorized_keys"
   type        = string
   default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCQjGhX4xoDZCY5ReglDLARRDM2ZBH8sUDV20o0rndT4mj9UwJdODwN6q4KIcryz0rsr9R9rfZnbDnTga7XL1vnnVG97N1/6rfmIJ5Sp692kVAOwZW52ddFztRiMeVyMUvIw5RTNuKgpK3Q+XblmWe1Nsn5CvI7GFWSFFml4rhL4+5o8ZJfu5LXF0sp3LnOUft710Ns/G0H/wUgXcQRJPUkBIIhi7AmHdHoZZKM/Y4Z+tGLFnaxZ10vGHNih97ct9ANN1tdcmvSP0WIznbeUK25pCxJigiYm2soWVWL2eZEJBMnzwYF5bVLvMTtDNF9mO++0xJTlC15eSwpGB1eG/Ef"
+}
+
+variable "vpc_subnet_mapping" {
+  description = "Network topology of CIDRS and subnets."
+  type = map
+  default = {
+    "azs"             = ["us-east-2a", "us-east-2b"]
+    "private_subnets" = ["10.0.1.0/24", "10.0.2.0/24"]
+    "public_subnets"  = ["10.0.101.0/24", "10.0.102.0/24"]
+  }
+}
+
+variable "vpc_cidr" {
+  description = "CIDR for entire VPC."
+  type = string
+  default = "10.0.0.0/16"
 }
