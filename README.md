@@ -35,8 +35,6 @@ terraform apply
 
 `terraform apply` will apply the changes.
 
-```
-
 # Destroy
 You'll destroy all of the above resources opposite of the order you created them using `terraform destroy`.
 
@@ -70,9 +68,9 @@ VPC PrivateLink, which will expose the endpoints internally to your VPC,
 or via NAT Gateways, which allow your private subnet EC2s to connect
 to the service endpoints over the public internet.
 
-* com.amazonaws.<region>.ecs-agent
-* com.amazonaws.<region>.ecs-telemetry
-* com.amazonaws.<region>.ecs
+* com.amazonaws.REGION.ecs-agent
+* com.amazonaws.REGION.ecs-telemetry
+* com.amazonaws.REGION.ecs
 
 As of this writing, VPC Privatelink endpoints are charged on a per-endpoint,
 per-AZ, per-hour basis. NAT Gateways are charged on a "per NAT-gateway hour" basis.
@@ -139,6 +137,19 @@ aws autoscaling describe-auto-scaling-groups
 aws autoscaling update-auto-scaling-group --auto-scaling-group-name "my-vpc-ecs-asg-dev-20201204235248083100000006" --min-size 0 --desired-capacity 0
 ```
 
+## Terraform Errors
+### Credential Sources
+```
+Error: error configuring Terraform AWS Provider: no valid credential sources for Terraform AWS Provider found.
+```
+
+Make sure you have credentials in `~/.aws/credentials`. Use `aws configure` to set this up. For demo purposes
+I am using the `Administrator` profile, but in practice you will need access to
+
+* EC2
+* ALB
+* ECS
+* IAM
 
 
 # Related Links
